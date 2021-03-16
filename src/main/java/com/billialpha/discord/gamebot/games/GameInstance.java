@@ -6,7 +6,6 @@ import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.message.ReactionAddEvent;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.channel.GuildMessageChannel;
-import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
@@ -63,6 +62,7 @@ public class GameInstance {
     }
 
     public void registerPlayer(Snowflake playerId) {
+        if (client.getSelfId().equals(playerId)) return;
         if (state == State.ACTIVE) throw new IllegalStateException("Cannot register players when game is active");
         LOG.info("Registering player: "+playerId.asLong());
         players.add(playerId);

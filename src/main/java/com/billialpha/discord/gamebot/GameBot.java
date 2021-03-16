@@ -4,20 +4,17 @@ import com.billialpha.discord.gamebot.games.GameInstance;
 import com.billialpha.discord.gamebot.games.GameRegistry;
 import com.billialpha.discord.gamebot.games.GameSpec;
 import com.billialpha.discord.gamebot.games.quizz.QuizzGame;
-import com.billialpha.discord.gamebot.games.quizz.QuizzRound;
 import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
 import discord4j.core.DiscordClientBuilder;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.event.domain.message.ReactionAddEvent;
-import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.GuildMessageChannel;
 import discord4j.core.object.presence.Presence;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.rest.util.Permission;
-import discord4j.rest.util.PermissionSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
@@ -32,7 +29,7 @@ import java.util.Set;
  */
 public class GameBot {
     private static GameBot instance;
-    public static final String VERSION = "0.1.0";
+    public static final String VERSION = "0.1.1";
     public static final Logger LOG = LoggerFactory.getLogger(GameBot.class);
 
     public static GameBot get() {

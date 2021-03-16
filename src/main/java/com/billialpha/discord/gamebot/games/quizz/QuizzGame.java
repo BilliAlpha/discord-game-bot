@@ -11,6 +11,8 @@ import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.Category;
 import discord4j.core.object.entity.channel.GuildMessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:billi.pamege.300@gmail.com">BilliAlpha</a>
  */
 public class QuizzGame implements Game {
+    public static final Logger LOG = LoggerFactory.getLogger(QuizzGame.class);
     public final GameInstance game;
     private final List<QuizzRound> rounds;
     private Tuple2<Snowflake, Snowflake> messageId;

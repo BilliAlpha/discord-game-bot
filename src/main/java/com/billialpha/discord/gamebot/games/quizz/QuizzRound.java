@@ -2,24 +2,20 @@ package com.billialpha.discord.gamebot.games.quizz;
 
 import com.billialpha.discord.gamebot.games.GameInstance;
 import discord4j.common.util.Snowflake;
-import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.GuildMessageChannel;
 import discord4j.core.object.reaction.ReactionEmoji;
 import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.gateway.GatewayClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -71,23 +67,28 @@ public class QuizzRound {
         if (running) return Mono.error(new IllegalStateException("Round already running"));
         this.running = true;
         this.startTime = Instant.now();
-        LOG.info("Starting round");
+        LOG.info("Starting round: "+title);
         // Timeout 60s
         Mono.just(1).delayElement(Duration.ofSeconds(60)) // FIXME: Hardcoded timeout
                 .flatMap(x -> stop())
                 .subscribe();
-        // Acknowledge host question
-        return source.addReaction(ReactionEmoji.unicode("✅"))
+
+        return Mono.when(
+                // Acknowledge host question
+                source.addReaction(ReactionEmoji.unicode("✅")),
+
                 // Create guild message
-                .then(quizz.game.client.getChannelById(channelId))
-                .ofType(GuildMessageChannel.class)
-                .flatMap(chan -> chan.createEmbed(x -> createEmbed(x, title, desc, null, running)))
-                .doOnSuccess(m -> messageId = m.getId())
-                .flatMap(m -> m.addReaction(ReactionEmoji.unicode("\uD83D\uDCBE"))) // Icon: Floppy disk
-                // Send question in DM
-                .thenMany(quizz.getAnswerChannels())
-                .flatMap(chan -> chan.createMessage("> **"+title+"**"+(desc != null ? "\n"+desc : "")))
-                .then();
+                quizz.game.client.getChannelById(channelId)
+                        .ofType(GuildMessageChannel.class)
+                        .flatMap(chan -> chan.createEmbed(x -> createEmbed(x, title, desc, null, running)))
+                        .doOnSuccess(m -> messageId = m.getId())
+                        .flatMap(m -> m.addReaction(ReactionEmoji.unicode("\uD83D\uDCBE"))), // Icon: Floppy disk
+
+                // Send question in channels
+                quizz.getAnswerChannels()
+                        .parallel()
+                        .flatMap(chan -> chan.createMessage("> **"+title+"**"+(desc != null ? "\n"+desc : "")))
+        );
     }
 
     public Mono<String> onAnswer(User player, String msg) {
@@ -114,7 +115,7 @@ public class QuizzRound {
 
         // Return reply: tell order to player
         return mono.thenReturn("Vous êtes "+order+(order == 1 ? "er" : "ème")+
-                " ("+(startTime.until(answer.time, ChronoUnit.SECONDS))+"s)");
+                " ("+answer.getResponseTime(startTime)+"s)");
     }
 
     public Mono<Void> stop() {
@@ -172,6 +173,10 @@ public class QuizzRound {
             return time;
         }
 
+        public String getResponseTime(Instant startTime) {
+            return String.format("%.2f", startTime.until(time, ChronoUnit.MILLIS)/1000f);
+        }
+
         public String getAnswer() {
             return answer;
         }
@@ -179,7 +184,7 @@ public class QuizzRound {
         public Mono<String> describe(GameInstance game, Instant startTime, boolean withAnswer) {
             Mono<String> mono = game.client.getMemberById(game.getGuildId(), userId)
                     .map(Member::getNicknameMention)
-                    .map(s -> s+" ("+(startTime.until(time, ChronoUnit.SECONDS))+"s)");
+                    .map(s -> s+" ("+getResponseTime(startTime)+"s)");
             return withAnswer ? mono.map(s -> s+": `"+answer+"`") : mono;
         }
     }
